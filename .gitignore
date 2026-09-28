@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment variables (berisi API keys - jangan di-commit)
+.env
+.env.local
+.env.production
+
+# Script helper
+git-push.bat

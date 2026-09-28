@@ -9,6 +9,8 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { accountTypes } from '../../data/seed.js';
 import { PasswordInput } from '../ui/Input.jsx';
 import Button from '../ui/Button.jsx';
+import { generateOTP, savePendingOTP } from '../../services/otpService.js';
+import { sendOTPEmail, isEmailConfigured } from '../../services/emailService.js';
 
 const registerSchema = z.object({
   name: z.string().min(2, 'Nama minimal 2 karakter'),
@@ -149,16 +151,37 @@ export default function RegisterForm({ onSuccess, onError }) {
     setLoading(true);
     setServerError('');
     try {
-      await registerUser({
+      // 1. Cek apakah email sudah terdaftar
+      const { userService } = await import('../../services/db.js');
+      const existing = userService.findOneBy('email', data.email.toLowerCase());
+      if (existing) {
+        throw new Error('Email sudah terdaftar. Silakan gunakan email lain atau masuk.');
+      }
+
+      // 2. Generate OTP & simpan data sementara
+      const otp = generateOTP();
+      const userData = {
         name: data.name,
         email: data.email,
         password: data.password,
         accountType: data.accountType,
+      };
+      savePendingOTP(otp, userData);
+
+      // 3. Kirim OTP ke email
+      if (isEmailConfigured()) {
+        await sendOTPEmail(data.email, data.name, otp);
+        onSuccess?.(`Kode OTP telah dikirim ke ${data.email}`);
+      } else {
+        // Mode development: tampilkan OTP di konsol & pesan
+        console.info(`[DEV MODE] Kode OTP untuk ${data.email}: ${otp}`);
+        onSuccess?.(`[DEV] Kode OTP: ${otp} (cek konsol browser)`);
+      }
+
+      // 4. Redirect ke halaman verifikasi
+      navigate('/verifikasi-email', {
+        state: { email: data.email, name: data.name, userData },
       });
-      onSuccess?.('Akun berhasil dibuat! Silakan masuk untuk melanjutkan.');
-      reset();
-      setAccountType('');
-      navigate('/');
     } catch (err) {
       setServerError(err.message);
       onError?.(err.message);

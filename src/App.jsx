@@ -11,6 +11,7 @@ import { useToast } from './hooks/useToast.js';
 // Lazy-load pages
 const HomePage = lazy(() => import('./pages/HomePage.jsx'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage.jsx'));
+const VerifyEmailPage = lazy(() => import('./pages/VerifyEmailPage.jsx'));
 
 // Loading spinner
 function PageLoader() {
@@ -62,6 +63,7 @@ function AppShell() {
         <Routes>
           <Route path="/" element={<HomePage onLoginClick={() => setLoginOpen(true)} />} />
           <Route path="/daftar" element={<RegisterPage />} />
+          <Route path="/verifikasi-email" element={<VerifyEmailPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Suspense>
